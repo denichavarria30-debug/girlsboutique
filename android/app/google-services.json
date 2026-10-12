@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "994437868322",
+    "project_id": "girls-boutique-app-2026",
+    "storage_bucket": "girls-boutique-app-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994437868322:android:a9f70251f980cf3c9f937b",
+        "android_client_info": {
+          "package_name": "com.example.girls_boutique_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfoChUEpWkqFLV3as7nwxslOA4KSaXHFQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
