@@ -30,8 +30,9 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
+
       - name: Construir aplicación web
-run: flutter build web --release --base-href "/girlsboutique/"
+        run: flutter build web --release --base-href "/girlsboutique/"
 
       - name: Preparar publicación
         uses: actions/upload-pages-artifact@v3
