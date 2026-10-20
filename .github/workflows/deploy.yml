@@ -31,7 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Construir aplicación web
-        run: flutter build web --release --base-href "/boutique-de-chicas/"
+run: flutter build web --release --base-href "/girlsboutique/"
 
       - name: Preparar publicación
         uses: actions/upload-pages-artifact@v3
