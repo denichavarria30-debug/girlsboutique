@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../viewsmodels/auth_viewmodel.dart';
 
@@ -51,11 +52,18 @@ class _RegistroScreenState extends State<RegistroScreen> {
               TextField(
                 controller: _telefono,
                 keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Teléfono',
+                  hintText: 'Ingresa 10 dígitos',
                   prefixIcon: Icon(Icons.phone, color: Colors.pink),
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
+                maxLength: 10,
               ),
               const SizedBox(height: 12),
               TextField(
@@ -92,26 +100,57 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       authVM.isLoading
                           ? null
                           : () async {
-                            bool ok = await authVM.register(
+                            if (_nombre.text.trim().isEmpty ||
+                                _telefono.text.trim().isEmpty ||
+                                _correo.text.trim().isEmpty ||
+                                _password.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Por favor, completa todos los campos',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (_telefono.text.trim().length != 10) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'El teléfono debe tener exactamente 10 dígitos',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final ok = await authVM.register(
                               nombre: _nombre.text.trim(),
                               telefono: _telefono.text.trim(),
                               correo: _correo.text.trim(),
                               password: _password.text.trim(),
                             );
-                            if (ok && context.mounted) {
+
+                            if (!context.mounted) return;
+
+                            if (ok) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('¡Registro exitoso!'),
+                                  backgroundColor: Colors.green,
                                 ),
                               );
-                              Navigator.pop(
-                                context,
-                                true,
-                              ); // Retorna true para actualizar sesión
-                            } else if (context.mounted &&
-                                authVM.errorMessage != null) {
+
+                              Navigator.pop(context, true);
+                            } else if (authVM.errorMessage != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(authVM.errorMessage!)),
+                                SnackBar(
+                                  content: Text(authVM.errorMessage!),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
                             }
                           },
