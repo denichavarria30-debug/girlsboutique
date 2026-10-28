@@ -15,7 +15,8 @@ class MainWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authVM = Provider.of<AuthViewModel>(context);
 
-    if (authVM.isLoading) {
+    // Aquí muestro la carga solo cuando se abre la aplicación
+    if (authVM.revisandoSesion) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: Colors.pink)),
       );
