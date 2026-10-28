@@ -145,20 +145,28 @@ class AuthViewModel extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      _user = await authRepository.registerUser(
+      // Primero registro al usuario y guardo sus datos en Firebase
+      await authRepository.registerUser(
         nombre: nombre.trim(),
         telefono: telefono.trim(),
         correo: correo.trim(),
         password: password,
       );
 
+      // Firebase inicia sesión automáticamente al crear una cuenta.
+      // Por eso cierro esa sesión para que el cliente tenga que iniciar sesión.
+      await authRepository.signOut();
+
+      // Aquí limpio el usuario para regresar a la pantalla de login
+      _user = null;
       _errorMessage = null;
 
       _setLoading(false);
 
+      // Si todo salió bien, regreso true
       return true;
     } catch (e) {
-      // Si no se puede registrar, le explico qué pasó
+      // Si ocurre un error, muestro el mensaje en español
       _errorMessage = _mensajeEnEspanol(e);
 
       _setLoading(false);
