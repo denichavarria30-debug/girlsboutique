@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../viewsmodels/auth_viewmodel.dart';
 import 'registro.dart';
 
@@ -22,6 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
   // Aquí guardo los mensajes cuando hay algún error
   String? _errorCorreo;
   String? _errorPassword;
+
+  // Aquí reviso si se está enviando el correo de recuperación
+  bool _enviandoRecuperacion = false;
 
   @override
   void dispose() {
@@ -62,6 +66,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Aquí reviso que el correo esté bien escrito
+  bool _correoValido(String correo) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(correo);
+  }
+
   // Reviso que los datos estén completos y bien escritos
   bool _validarCampos() {
     final correo = _correo.text.trim();
@@ -74,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Si no escribe su correo, le muestro un aviso
       if (correo.isEmpty) {
         _errorCorreo = 'Ingresa tu correo electrónico';
-      } else if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(correo)) {
+      } else if (!_correoValido(correo)) {
         _errorCorreo = 'Ingresa un correo electrónico válido';
       }
 
@@ -113,6 +122,86 @@ class _LoginScreenState extends State<LoginScreen> {
       _mostrarMensaje(
         'Ocurrió un error al iniciar sesión. Inténtalo nuevamente.',
       );
+    }
+  }
+
+  // Aquí permito recuperar la contraseña por correo
+  Future<void> _recuperarPassword() async {
+    // Primero reviso que el correo esté escrito correctamente
+    final correo = _correo.text.trim();
+
+    if (correo.isEmpty) {
+      setState(() {
+        _errorCorreo = 'Escribe tu correo para recuperar tu contraseña';
+      });
+
+      _mostrarMensaje('Primero escribe tu correo electrónico');
+
+      return;
+    }
+
+    if (!_correoValido(correo)) {
+      setState(() {
+        _errorCorreo = 'Ingresa un correo electrónico válido';
+      });
+
+      _mostrarMensaje('Revisa que tu correo esté bien escrito');
+
+      return;
+    }
+
+    // Aquí muestro que estoy enviando el correo
+    setState(() {
+      _enviandoRecuperacion = true;
+      _errorCorreo = null;
+    });
+
+    try {
+      // Firebase envía el enlace para cambiar la contraseña
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: correo);
+
+      if (!mounted) return;
+
+      // Aquí aviso que debe revisar su correo
+      _mostrarMensaje(
+        'Si existe una cuenta con ese correo, recibirás un enlace '
+        'para cambiar tu contraseña. Revisa también la carpeta de spam.',
+        error: false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      // Aquí muestro mensajes en español cuando ocurre un error
+      String mensaje;
+
+      switch (e.code) {
+        case 'invalid-email':
+          mensaje = 'El correo electrónico no es válido.';
+          break;
+
+        case 'too-many-requests':
+          mensaje = 'Has realizado demasiados intentos. Inténtalo más tarde.';
+          break;
+
+        case 'network-request-failed':
+          mensaje = 'No hay conexión a internet. Revisa tu conexión.';
+          break;
+
+        default:
+          mensaje = 'No se pudo procesar la solicitud. Inténtalo nuevamente.';
+      }
+
+      _mostrarMensaje(mensaje);
+    } catch (_) {
+      if (!mounted) return;
+
+      _mostrarMensaje('Ocurrió un error al solicitar la recuperación.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _enviandoRecuperacion = false;
+        });
+      }
     }
   }
 
@@ -237,7 +326,34 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+
+            // Aquí agregué la opción para recuperar contraseña
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed:
+                    authVM.isLoading || _enviandoRecuperacion
+                        ? null
+                        : _recuperarPassword,
+
+                child:
+                    _enviandoRecuperacion
+                        ? const Text(
+                          'Enviando correo...',
+                          style: TextStyle(color: Colors.pink),
+                        )
+                        : const Text(
+                          '¿Olvidaste tu contraseña?',
+                          style: TextStyle(
+                            color: Colors.pink,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // Este es mi botón para ingresar
             SizedBox(
@@ -255,7 +371,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 onPressed:
-                    authVM.isLoading ? null : () => _iniciarSesion(authVM),
+                    authVM.isLoading || _enviandoRecuperacion
+                        ? null
+                        : () => _iniciarSesion(authVM),
 
                 // Mientras revisa los datos, aparece un circulito
                 child:
